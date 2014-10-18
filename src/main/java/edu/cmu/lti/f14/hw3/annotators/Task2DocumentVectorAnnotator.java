@@ -19,12 +19,30 @@ import org.tartarus.snowball.ext.EnglishStemmer;
 
 import edu.cmu.lti.f14.hw3.typesystems.Document;
 import edu.cmu.lti.f14.hw3.typesystems.Token;
+import edu.cmu.lti.f14.hw3.utils.FileUtil;
 import edu.cmu.lti.f14.hw3.utils.StanfordLemmatizer;
 import edu.cmu.lti.f14.hw3.utils.Utils;
-import edu.stanford.nlp.ling.Word;
 
-public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
-	
+public class Task2DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
+
+	EnglishStemmer stemmer = null;
+	Set<String> stopwordsSet = null;
+
+	@Override
+	public void initialize(UimaContext aContext) throws ResourceInitializationException {
+		super.initialize(aContext);
+
+		stemmer = new EnglishStemmer();
+		stopwordsSet = new HashSet<String>();
+		FileUtil.iterateFileByLine("stopwords.txt", new FileUtil.FileLineProcess() {
+			@Override
+			public void process(String line) {
+				stopwordsSet.add(line.trim());
+			}
+		});
+
+	}
+
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {
 
@@ -47,14 +65,62 @@ public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
 	 * @return a list of tokens.
 	 */
 
-	List<String> tokenize0(String doc) {
+	List<String> tokenize(String doc) {
 		List<String> res = new ArrayList<String>();
 
 		for (String s : doc.split("\\s+"))
 			res.add(s);
 		return res;
 	}
-	
+
+	List<String> tokenize1(String doc) { // stanford
+		List<String> res = new ArrayList<String>();
+
+		for (String s : doc.split("\\s+")) {
+			res.add(StanfordLemmatizer.stemWord(s));
+		}
+		return res;
+	}
+
+	List<String> tokenize2(String doc) { // snow ball
+		List<String> res = new ArrayList<String>();
+
+		for (String s : doc.split("\\s+")) {
+			stemmer.setCurrent(s);
+			if (stemmer.stem())
+				res.add(stemmer.getCurrent());
+			else
+				res.add(s);
+		}
+		return res;
+	}
+
+	List<String> tokenize1_stopwordsFilter(String doc) {
+		List<String> res = new ArrayList<String>();
+
+		for (String s : doc.split("\\s+")) {
+			if (stopwordsSet.contains(s))
+				continue;
+			res.add(StanfordLemmatizer.stemWord(s));
+		}
+		return res;
+	}
+
+	List<String> tokenize2_stopwordsFilter(String doc) {
+		List<String> res = new ArrayList<String>();
+
+		for (String s : doc.split("\\s+")) {
+			if (stopwordsSet.contains(s))
+				continue;
+			stemmer.setCurrent(s);
+			if (stemmer.stem())
+				res.add(stemmer.getCurrent());
+			else
+				res.add(s);
+		}
+		return res;
+	}
+
 	/**
 	 * 
 	 * @param jcas
@@ -64,7 +130,11 @@ public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
 	private void createTermFreqVector(JCas jcas, Document doc) {
 
 		String docText = doc.getText();
-		List<String> tokenizeList = tokenize0(docText);
+		// List<String> tokenizeList = tokenize0(docText);
+		// List<String> tokenizeList = tokenize1(docText);
+		List<String> tokenizeList = tokenize2(docText);
+		// List<String> tokenizeList = tokenize1_stopwordsFilter(docText);
+		// List<String> tokenizeList = tokenize2_stopwordsFilter(docText);
 
 		Map<String, Integer> frequenceMap = new HashMap<String, Integer>();
 		for (String token : tokenizeList) {

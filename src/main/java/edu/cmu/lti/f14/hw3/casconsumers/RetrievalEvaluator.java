@@ -159,6 +159,7 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 				if (scoredDocField.get(i).getV2() == 1) {
 					rank = i + 1;
 					relativeDoc = scoredDocField.get(i);
+					break;
 				}
 			}
 			if (rank != -1)
@@ -209,6 +210,8 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 		return cosine_similarity;
 	}
 
+	
+	
 	private double getVictorLength(Map<String, Integer> vector) {
 		double squareSum = 0;
 		for (String key : vector.keySet()) {

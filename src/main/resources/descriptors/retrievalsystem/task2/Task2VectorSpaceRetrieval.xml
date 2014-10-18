@@ -3,14 +3,14 @@
 	<frameworkImplementation>org.apache.uima.java</frameworkImplementation>
 	<primitive>false</primitive>
 	<delegateAnalysisEngineSpecifiers>
-		<delegateAnalysisEngine key="DocumentVectorAnnotator">
-			<import location="DocumentVectorAnnotator.xml" />
+		<delegateAnalysisEngine key="Task2DocumentVectorAnnotator">
+			<import location="Task2DocumentVectorAnnotator.xml" />
 		</delegateAnalysisEngine>
 		<delegateAnalysisEngine key="DocumentReader">
-			<import location="DocumentReader.xml" />
+			<import location="../DocumentReader.xml" />
 		</delegateAnalysisEngine>
-		<delegateAnalysisEngine key="RetrievalEvaluator">
-			<import location="RetrievalEvaluator.xml" />
+		<delegateAnalysisEngine key="Task2RetrievalEvaluator">
+			<import location="Task2RetrievalEvaluator.xml" />
 		</delegateAnalysisEngine>
 	</delegateAnalysisEngineSpecifiers>
 	<analysisEngineMetaData>
@@ -23,8 +23,8 @@
 		<flowConstraints>
 			<fixedFlow>
 				<node>DocumentReader</node>
-				<node>DocumentVectorAnnotator</node>
-				<node>RetrievalEvaluator</node>
+				<node>Task2DocumentVectorAnnotator</node>
+				<node>Task2RetrievalEvaluator</node>
 			</fixedFlow>
 		</flowConstraints>
 		<fsIndexCollection />
