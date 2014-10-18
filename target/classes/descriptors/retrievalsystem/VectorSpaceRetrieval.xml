@@ -1,21 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <analysisEngineDescription xmlns="http://uima.apache.org/resourceSpecifier">
   <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
-  <primitive>true</primitive>
-  <annotatorImplementationName>edu.cmu.lti.f14.hw3.annotators.DocumentVectorAnnotator</annotatorImplementationName>  
+  <primitive>false</primitive>
+  <delegateAnalysisEngineSpecifiers>
+    <delegateAnalysisEngine key="DocumentVectorAnnotator">
+      <import location="DocumentVectorAnnotator.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="DocumentReader">
+      <import location="DocumentReader.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="RetrievalEvaluator">
+      <import location="RetrievalEvaluator.xml"/>
+    </delegateAnalysisEngine>
+  </delegateAnalysisEngineSpecifiers>
   <analysisEngineMetaData>
-    <name>DocumentVector</name>
+    <name>DocumentRetrieval</name>
     <description/>
-    <version>1.0</version>
+    <version/>
     <vendor/>
     <configurationParameters/>
     <configurationParameterSettings/>
-    <typeSystemDescription>
-      <imports>
-		<import location="../typesystems/VectorSpaceTypes.xml"/>
-      </imports>
-    </typeSystemDescription>
-    <typePriorities/>
+    <flowConstraints>
+      <fixedFlow>
+        <node>DocumentReader</node>
+        <node>DocumentVectorAnnotator</node>
+        <node>RetrievalEvaluator</node>
+      </fixedFlow>
+    </flowConstraints>
     <fsIndexCollection/>
     <capabilities>
       <capability>
