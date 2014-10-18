@@ -1,6 +1,10 @@
 package edu.cmu.lti.f14.hw3.casconsumers;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,7 +28,6 @@ import org.apache.uima.util.ProcessTrace;
 import edu.cmu.lti.f14.hw3.typesystems.Document;
 import edu.cmu.lti.f14.hw3.typesystems.Token;
 import edu.cmu.lti.f14.hw3.utils.Triple;
-import edu.cmu.lti.f14.hw3.utils.Triple;
 import edu.cmu.lti.f14.hw3.utils.Utils;
 
 public class RetrievalEvaluator extends CasConsumer_ImplBase {
@@ -39,6 +42,10 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
 	public ArrayList<String> sentenceList;
 
+	public static final String PARAM_OUTPUT_FILE = "OutputFile";
+	PrintWriter writer = null;
+
+	@Override
 	public void initialize() throws ResourceInitializationException {
 
 		qIdList = new ArrayList<Integer>();
@@ -46,6 +53,23 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 		// testdata = new HashMap<Integer, List<Map<String,Integer>>>();
 		vectorList = new ArrayList<Map<String, Integer>>();
 		sentenceList = new ArrayList<String>();
+
+		String outputFile = ((String) getConfigParameterValue(PARAM_OUTPUT_FILE)).trim();
+		URL resource = RetrievalEvaluator.class.getResource(outputFile);
+		if (null != resource) {
+			File f = new File(resource.getFile());
+			try {
+				writer = new PrintWriter(f);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		} else {
+			try {
+				writer = new PrintWriter(outputFile);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	/**
@@ -79,7 +103,6 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 			qIdList.add(doc.getQueryID());
 			relList.add(doc.getRelevanceValue());
 			sentenceList.add(doc.getText());
-			// Do something useful here
 
 		}
 
@@ -95,7 +118,7 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 		super.collectionProcessComplete(arg0);
 		HashMap<Integer, Map<String, Integer>> queryMap = new HashMap<Integer, Map<String, Integer>>();
 		HashMap<Integer, List<Triple<Map<String, Integer>, String, Integer>>> documentsMap = new HashMap<Integer, List<Triple<Map<String, Integer>, String, Integer>>>();
-		// TODO :: compute the cosine similarity measure
+
 		for (int i = 0; i < qIdList.size(); i++) {
 			int qid = qIdList.get(i);
 			int rel = relList.get(i);
@@ -109,6 +132,7 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 				documentsMap.get(qid).add(relVector);
 			}
 		}
+
 		double totalMMr = 0.0;
 		for (Integer qid : queryMap.keySet()) {
 			List<Triple<Map<String, Integer>, String, Integer>> docField = documentsMap.get(qid);
@@ -123,11 +147,11 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
 			Collections.sort(scoredDocField, Collections.reverseOrder(//
 					new Comparator<Triple<String, Integer, Double>>() {
-				@Override
-				public int compare(Triple<String, Integer, Double> o1, Triple<String, Integer, Double> o2) {
-					return o1.getV3().compareTo(o2.getV3());
-				}
-			}));
+						@Override
+						public int compare(Triple<String, Integer, Double> o1, Triple<String, Integer, Double> o2) {
+							return o1.getV3().compareTo(o2.getV3());
+						}
+					}));
 
 			int rank = -1;
 			Triple<String, Integer, Double> relativeDoc = null;
@@ -139,18 +163,23 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 			}
 			if (rank != -1)
 				totalMMr += 1.0 / rank;
-
-			System.out.println(String.format("cosine=%f\trank=%d\tqid=%d\trel=%d\t%s",//
-					relativeDoc.getV3(), rank, qid, 1, relativeDoc.getV1()));
+			String outputString = String.format("cosine=%f\trank=%d\tqid=%d\trel=%d\t%s",//
+					relativeDoc.getV3(), rank, qid, 1, relativeDoc.getV1());
+			System.out.println(outputString);
+			writer.println(outputString);
 		}
 
-		// TODO :: compute the rank of retrieved sentences
-
-		// TODO :: compute the metric:: mean reciprocal rank
 		double metric_mrr = totalMMr / documentsMap.size();
 		System.out.println(" (MRR) Mean Reciprocal Rank ::" + metric_mrr);
+		writer.println("MRR=" + metric_mrr);
 	}
 
+	@Override
+	public void destroy() {
+		writer.close();
+		super.destroy();
+	}
+	
 	/**
 	 * 
 	 * @return cosine_similarity
