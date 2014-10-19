@@ -1,5 +1,5 @@
 
-/* First created by JCasGen Sat Oct 18 17:30:07 EDT 2014 */
+/* First created by JCasGen Sun Oct 19 02:07:31 EDT 2014 */
 package edu.cmu.lti.f14.hw3.typesystems.task2;
 
 import org.apache.uima.jcas.JCas;
@@ -14,9 +14,9 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.jcas.tcas.Annotation_Type;
 
 /** 
- * Updated by JCasGen Sat Oct 18 18:03:42 EDT 2014
+ * Updated by JCasGen Sun Oct 19 02:07:31 EDT 2014
  * @generated */
-public class VectorResult_Type extends Annotation_Type {
+public class ConfigVector_Type extends Annotation_Type {
   /** @generated 
    * @return the generator for this type
    */
@@ -26,25 +26,25 @@ public class VectorResult_Type extends Annotation_Type {
   private final FSGenerator fsGenerator = 
     new FSGenerator() {
       public FeatureStructure createFS(int addr, CASImpl cas) {
-  			 if (VectorResult_Type.this.useExistingInstance) {
+  			 if (ConfigVector_Type.this.useExistingInstance) {
   			   // Return eq fs instance if already created
-  		     FeatureStructure fs = VectorResult_Type.this.jcas.getJfsFromCaddr(addr);
+  		     FeatureStructure fs = ConfigVector_Type.this.jcas.getJfsFromCaddr(addr);
   		     if (null == fs) {
-  		       fs = new VectorResult(addr, VectorResult_Type.this);
-  			   VectorResult_Type.this.jcas.putJfsFromCaddr(addr, fs);
+  		       fs = new ConfigVector(addr, ConfigVector_Type.this);
+  			   ConfigVector_Type.this.jcas.putJfsFromCaddr(addr, fs);
   			   return fs;
   		     }
   		     return fs;
-        } else return new VectorResult(addr, VectorResult_Type.this);
+        } else return new ConfigVector(addr, ConfigVector_Type.this);
   	  }
     };
   /** @generated */
   @SuppressWarnings ("hiding")
-  public final static int typeIndexID = VectorResult.typeIndexID;
+  public final static int typeIndexID = ConfigVector.typeIndexID;
   /** @generated 
      @modifiable */
   @SuppressWarnings ("hiding")
-  public final static boolean featOkTst = JCasRegistry.getFeatOkTst("edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult");
+  public final static boolean featOkTst = JCasRegistry.getFeatOkTst("edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector");
  
   /** @generated */
   final Feature casFeat_tokenList;
@@ -56,7 +56,7 @@ public class VectorResult_Type extends Annotation_Type {
    */ 
   public int getTokenList(int addr) {
         if (featOkTst && casFeat_tokenList == null)
-      jcas.throwFeatMissing("tokenList", "edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult");
+      jcas.throwFeatMissing("tokenList", "edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector");
     return ll_cas.ll_getRefValue(addr, casFeatCode_tokenList);
   }
   /** @generated
@@ -65,7 +65,7 @@ public class VectorResult_Type extends Annotation_Type {
    */    
   public void setTokenList(int addr, int v) {
         if (featOkTst && casFeat_tokenList == null)
-      jcas.throwFeatMissing("tokenList", "edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult");
+      jcas.throwFeatMissing("tokenList", "edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector");
     ll_cas.ll_setRefValue(addr, casFeatCode_tokenList, v);}
     
   
@@ -80,7 +80,7 @@ public class VectorResult_Type extends Annotation_Type {
    */ 
   public String getStemMethod(int addr) {
         if (featOkTst && casFeat_stemMethod == null)
-      jcas.throwFeatMissing("stemMethod", "edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult");
+      jcas.throwFeatMissing("stemMethod", "edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector");
     return ll_cas.ll_getStringValue(addr, casFeatCode_stemMethod);
   }
   /** @generated
@@ -89,7 +89,7 @@ public class VectorResult_Type extends Annotation_Type {
    */    
   public void setStemMethod(int addr, String v) {
         if (featOkTst && casFeat_stemMethod == null)
-      jcas.throwFeatMissing("stemMethod", "edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult");
+      jcas.throwFeatMissing("stemMethod", "edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector");
     ll_cas.ll_setStringValue(addr, casFeatCode_stemMethod, v);}
     
   
@@ -104,7 +104,7 @@ public class VectorResult_Type extends Annotation_Type {
    */ 
   public boolean getFilteredStopword(int addr) {
         if (featOkTst && casFeat_filteredStopword == null)
-      jcas.throwFeatMissing("filteredStopword", "edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult");
+      jcas.throwFeatMissing("filteredStopword", "edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector");
     return ll_cas.ll_getBooleanValue(addr, casFeatCode_filteredStopword);
   }
   /** @generated
@@ -113,7 +113,7 @@ public class VectorResult_Type extends Annotation_Type {
    */    
   public void setFilteredStopword(int addr, boolean v) {
         if (featOkTst && casFeat_filteredStopword == null)
-      jcas.throwFeatMissing("filteredStopword", "edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult");
+      jcas.throwFeatMissing("filteredStopword", "edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector");
     ll_cas.ll_setBooleanValue(addr, casFeatCode_filteredStopword, v);}
     
   
@@ -128,7 +128,7 @@ public class VectorResult_Type extends Annotation_Type {
    */ 
   public boolean getAllLowerCase(int addr) {
         if (featOkTst && casFeat_allLowerCase == null)
-      jcas.throwFeatMissing("allLowerCase", "edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult");
+      jcas.throwFeatMissing("allLowerCase", "edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector");
     return ll_cas.ll_getBooleanValue(addr, casFeatCode_allLowerCase);
   }
   /** @generated
@@ -137,7 +137,7 @@ public class VectorResult_Type extends Annotation_Type {
    */    
   public void setAllLowerCase(int addr, boolean v) {
         if (featOkTst && casFeat_allLowerCase == null)
-      jcas.throwFeatMissing("allLowerCase", "edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult");
+      jcas.throwFeatMissing("allLowerCase", "edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector");
     ll_cas.ll_setBooleanValue(addr, casFeatCode_allLowerCase, v);}
     
   
@@ -152,7 +152,7 @@ public class VectorResult_Type extends Annotation_Type {
    */ 
   public String getTokenizeMethod(int addr) {
         if (featOkTst && casFeat_tokenizeMethod == null)
-      jcas.throwFeatMissing("tokenizeMethod", "edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult");
+      jcas.throwFeatMissing("tokenizeMethod", "edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector");
     return ll_cas.ll_getStringValue(addr, casFeatCode_tokenizeMethod);
   }
   /** @generated
@@ -161,7 +161,7 @@ public class VectorResult_Type extends Annotation_Type {
    */    
   public void setTokenizeMethod(int addr, String v) {
         if (featOkTst && casFeat_tokenizeMethod == null)
-      jcas.throwFeatMissing("tokenizeMethod", "edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult");
+      jcas.throwFeatMissing("tokenizeMethod", "edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector");
     ll_cas.ll_setStringValue(addr, casFeatCode_tokenizeMethod, v);}
     
   
@@ -173,7 +173,7 @@ public class VectorResult_Type extends Annotation_Type {
 	 * @param jcas JCas
 	 * @param casType Type 
 	 */
-  public VectorResult_Type(JCas jcas, Type casType) {
+  public ConfigVector_Type(JCas jcas, Type casType) {
     super(jcas, casType);
     casImpl.getFSClassRegistry().addGeneratorForType((TypeImpl)this.casType, getFSGenerator());
 

@@ -51,7 +51,7 @@
       </features>
     </typeDescription>
   <typeDescription>
-      <name>edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult</name>
+      <name>edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector</name>
       <description/>
       <supertypeName>uima.tcas.Annotation</supertypeName>
       <features>

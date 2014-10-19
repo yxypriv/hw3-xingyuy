@@ -17,13 +17,13 @@ import org.apache.uima.resource.ResourceInitializationException;
 import edu.cmu.lti.f14.hw3.typesystems.Document;
 import edu.cmu.lti.f14.hw3.typesystems.Token;
 import edu.cmu.lti.f14.hw3.typesystems.task2.Task2Document;
-import edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult;
+import edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector;
 import edu.cmu.lti.f14.hw3.utils.Pair;
 import edu.cmu.lti.f14.hw3.utils.Utils;
-import edu.cmu.lti.f14.hw3.utils.task2.CapitalizeDivide;
-import edu.cmu.lti.f14.hw3.utils.task2.StemmerDivide;
-import edu.cmu.lti.f14.hw3.utils.task2.StopwordDivide;
-import edu.cmu.lti.f14.hw3.utils.task2.Tokenizer;
+import edu.cmu.lti.f14.hw3.utils.task2.configDivider.CapitalizeDivide;
+import edu.cmu.lti.f14.hw3.utils.task2.configDivider.StemmerDivide;
+import edu.cmu.lti.f14.hw3.utils.task2.configDivider.StopwordDivide;
+import edu.cmu.lti.f14.hw3.utils.task2.configDivider.Tokenizer;
 
 public class Task2DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
 
@@ -65,11 +65,11 @@ public class Task2DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
 		t2doc.setQid(doc.getQueryID());
 		t2doc.setRel(doc.getRelevanceValue());
 		
-		List<VectorResult> caseResultList = new ArrayList<VectorResult>();
+		List<ConfigVector> caseResultList = new ArrayList<ConfigVector>();
 		for (Pair<List<String>, String> annotatedList : finalResult) {
 			List<String> tokenizeList = annotatedList.getV1();
 			String annotation = annotatedList.getV2();
-			VectorResult caseResult = new VectorResult(jcas);
+			ConfigVector caseResult = new ConfigVector(jcas);
 			String[] split = annotation.split("#");
 			caseResult.setTokenizeMethod(split[0]);
 			caseResult.setAllLowerCase(Boolean.parseBoolean(split[1]));

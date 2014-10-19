@@ -1,4 +1,4 @@
-package edu.cmu.lti.f14.hw3.utils.task2;
+package edu.cmu.lti.f14.hw3.utils.task2.configDivider;
 
 import java.util.ArrayList;
 import java.util.HashSet;

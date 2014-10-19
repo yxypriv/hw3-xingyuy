@@ -26,11 +26,12 @@ import org.apache.uima.resource.ResourceProcessException;
 import org.apache.uima.util.ProcessTrace;
 
 import edu.cmu.lti.f14.hw3.models.ConfigurationMMR;
-import edu.cmu.lti.f14.hw3.models.CorpusDocument;
+import edu.cmu.lti.f14.hw3.models.ScoredDocument;
 import edu.cmu.lti.f14.hw3.typesystems.Token;
 import edu.cmu.lti.f14.hw3.typesystems.task2.Task2Document;
-import edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult;
+import edu.cmu.lti.f14.hw3.typesystems.task2.ConfigVector;
 import edu.cmu.lti.f14.hw3.utils.Utils;
+import edu.cmu.lti.f14.hw3.utils.task2.similarity.SimilarityCompute;
 
 public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 
@@ -39,7 +40,7 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 	public static final String PARAM_OUTPUT_FILE = "OutputFile";
 	PrintWriter writer = null;
 
-	List<List<CorpusDocument>> configurationGroupedDocList = new ArrayList<List<CorpusDocument>>();
+	List<List<ScoredDocument>> configurationGroupedDocList = new ArrayList<List<ScoredDocument>>();
 
 	@Override
 	public void initialize() throws ResourceInitializationException {
@@ -77,10 +78,10 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 		}
 
 		FSIterator<Annotation> it = jcas.getAnnotationIndex(Task2Document.type).iterator();
-		List<List<CorpusDocument>> docGroupedDocList = new ArrayList<List<CorpusDocument>>();
-		Comparator<CorpusDocument> configurationOrderComparator = new Comparator<CorpusDocument>() {
+		List<List<ScoredDocument>> docGroupedDocList = new ArrayList<List<ScoredDocument>>();
+		Comparator<ScoredDocument> configurationOrderComparator = new Comparator<ScoredDocument>() {
 			@Override
-			public int compare(CorpusDocument o1, CorpusDocument o2) {
+			public int compare(ScoredDocument o1, ScoredDocument o2) {
 				int result = o1.getTokenizeMethod().compareTo(o2.getTokenizeMethod());
 				if (0 == result)
 					result = o1.getAllLowerCase().compareTo(o2.getAllLowerCase());
@@ -94,17 +95,17 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 		if (it.hasNext()) {
 			Task2Document t2doc = (Task2Document) it.next();
 			FSList vectorList = t2doc.getVectorList();
-			ArrayList<VectorResult> vectorResult = Utils.fromFSListToCollection(vectorList, VectorResult.class);
-			List<CorpusDocument> sameDocList = new ArrayList<CorpusDocument>();
+			ArrayList<ConfigVector> configVectorList = Utils.fromFSListToCollection(vectorList, ConfigVector.class);
+			List<ScoredDocument> sameDocList = new ArrayList<ScoredDocument>();
 
-			for (VectorResult doc : vectorResult) {
+			for (ConfigVector doc : configVectorList) {
 				FSList fsTokenList = doc.getTokenList();
 				ArrayList<Token> tokenList = Utils.fromFSListToCollection(fsTokenList, Token.class);
 				Map<String, Integer> vector = new HashMap<String, Integer>();
 				for (Token token : tokenList) {
 					vector.put(token.getText(), token.getFrequency());
 				}
-				CorpusDocument cdoc = new CorpusDocument();
+				ScoredDocument cdoc = new ScoredDocument();
 				cdoc.setQid(t2doc.getQid());
 				cdoc.setRel(t2doc.getRel());
 				cdoc.setTfVector(vector);
@@ -126,10 +127,10 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 		}
 		if (configurationGroupedDocList.size() == 0) {
 			for (int i = 0; i < configSize; i++) {
-				configurationGroupedDocList.add(new ArrayList<CorpusDocument>());
+				configurationGroupedDocList.add(new ArrayList<ScoredDocument>());
 			}
 		}
-		for (List<CorpusDocument> sameDocList : docGroupedDocList) {
+		for (List<ScoredDocument> sameDocList : docGroupedDocList) {
 			for (int i = 0; i < sameDocList.size(); i++) {
 				configurationGroupedDocList.get(i).add(sameDocList.get(i));
 			}
@@ -145,12 +146,12 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 
 		super.collectionProcessComplete(arg0);
 		List<ConfigurationMMR> mmrList = new ArrayList<ConfigurationMMR>();
-		for (List<CorpusDocument> docList : configurationGroupedDocList) {
+		for (List<ScoredDocument> docList : configurationGroupedDocList) {
 			Integer totalFileLength = 0;
 			Map<String, Integer> dfMap = new HashMap<String, Integer>();
 			ConfigurationMMR cmmr = null;
 			// System.out.println(docList.size());
-			for (CorpusDocument cd : docList) {
+			for (ScoredDocument cd : docList) {
 				if (null == cmmr) {
 					cmmr = new ConfigurationMMR(cd);
 					String outputString = String.format("[Configuration] tokenize: %s\tlowercase: %s\tstopwords: %s\tstemming: %s",//
@@ -174,7 +175,7 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 				idfMap.put(key, Math.log(docList.size() / dfMap.get(key)));
 			}
 
-			for (CorpusDocument cd : docList) {
+			for (ScoredDocument cd : docList) {
 				Map<String, Integer> vector = cd.getTfVector();
 				Map<String, Double> tfIdfVector = new HashMap<String, Double>();
 				int wordCount = 0;
@@ -187,32 +188,32 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 				cd.setTfIdfVector(tfIdfVector);
 			}
 
-			HashMap<Integer, CorpusDocument> queryMap = new HashMap<Integer, CorpusDocument>();
-			HashMap<Integer, List<CorpusDocument>> documentsMap = new HashMap<Integer, List<CorpusDocument>>();
+			HashMap<Integer, ScoredDocument> queryMap = new HashMap<Integer, ScoredDocument>();
+			HashMap<Integer, List<ScoredDocument>> documentsMap = new HashMap<Integer, List<ScoredDocument>>();
 
-			for (CorpusDocument cp : docList) {
+			for (ScoredDocument cp : docList) {
 				int qid = cp.getQid();
 				int rel = cp.getRel();
 				if (rel == 99) {
 					queryMap.put(qid, cp);
 				} else {
 					if (!documentsMap.containsKey(qid))
-						documentsMap.put(qid, new ArrayList<CorpusDocument>());
+						documentsMap.put(qid, new ArrayList<ScoredDocument>());
 					documentsMap.get(qid).add(cp);
 				}
 			}
 
 			double[] totalMMr = new double[methods.length];
 			for (Integer qid : queryMap.keySet()) {
-				List<CorpusDocument> docField = documentsMap.get(qid);
-				CorpusDocument queryDoc = queryMap.get(qid);
+				List<ScoredDocument> docField = documentsMap.get(qid);
+				ScoredDocument queryDoc = queryMap.get(qid);
 
-				for (CorpusDocument doc : docField) {
-					double naiveScore = computeCosineSimilarity(queryDoc.getTfVector(), doc.getTfVector());
-					double tfidfScore = computeCosineSimilarity(queryDoc.getTfIdfVector(), doc.getTfIdfVector());
-					double naiveDice = computeDiceSimilarity(queryDoc.getTfVector(), doc.getTfVector());
-					double naiveJaccard = computeJaccardSimilarity(queryDoc.getTfVector(), doc.getTfVector());
-					double naiveBm25 = computeBM25Similarity(queryDoc.getTfVector(), doc.getTfVector(), aveageFileLength, idfMap);
+				for (ScoredDocument doc : docField) {
+					double naiveScore = SimilarityCompute.computeCosineSimilarity(queryDoc.getTfVector(), doc.getTfVector());
+					double tfidfScore = SimilarityCompute.computeCosineSimilarity(queryDoc.getTfIdfVector(), doc.getTfIdfVector());
+					double naiveDice = SimilarityCompute.computeDiceSimilarity(queryDoc.getTfVector(), doc.getTfVector());
+					double naiveJaccard = SimilarityCompute.computeJaccardSimilarity(queryDoc.getTfVector(), doc.getTfVector());
+					double naiveBm25 = SimilarityCompute.computeBM25Similarity(queryDoc.getTfVector(), doc.getTfVector(), aveageFileLength, idfMap);
 					doc.getScores().add(naiveScore);
 					doc.getScores().add(tfidfScore);
 					doc.getScores().add(naiveDice);
@@ -221,10 +222,10 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 				}
 
 				for (int i = 0; i < methods.length; i++) {
-					CorpusDocument.ScoreComparator indexScoreComparator = new CorpusDocument.ScoreComparator(i);
+					ScoredDocument.ScoreComparator indexScoreComparator = new ScoredDocument.ScoreComparator(i);
 					Collections.sort(docField, Collections.reverseOrder(indexScoreComparator));
 					int rank = -1;
-					CorpusDocument relativeDoc = null;
+					ScoredDocument relativeDoc = null;
 					for (int j = 0; j < docField.size(); j++) {
 						if (docField.get(j).getRel() == 1) {
 							rank = j + 1;
@@ -253,7 +254,15 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 				mmrList.add(ncmmr);
 			}
 		}
-
+		
+		
+		int wordCount = 0;
+		for (ConfigurationMMR mmr : mmrList) {
+			System.out.print(mmr.getMmr() + "\t");
+			if(++wordCount % methods.length == 0) 
+				System.out.println();
+		}
+		
 		Collections.sort(mmrList, Collections.reverseOrder(ConfigurationMMR.mmrComparator));
 		int topdisplay = 5;
 		for (ConfigurationMMR mmr : mmrList) {
@@ -271,115 +280,8 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 		super.destroy();
 	}
 
-	private <T> double computeCosineSimilarity(Map<String, T> queryVector, Map<String, T> docVector) {
-		double cosine_similarity = 0.0;
+	
 
-		double vectorSum = 0.0;
-		Set<String> dimentionSet = new HashSet<String>();
-
-		dimentionSet.addAll(queryVector.keySet());
-		dimentionSet.addAll(docVector.keySet());
-		for (String key : dimentionSet) {
-			Double qf = 0.0;
-			Double df = 0.0;
-			if (queryVector.containsKey(key)) {
-				qf = _transferNumber2Double(queryVector.get(key));
-			}
-			if (docVector.containsKey(key)) {
-				df = _transferNumber2Double(docVector.get(key));
-			}
-			vectorSum += qf * df;
-		}
-
-		cosine_similarity = vectorSum / (getVictorLength(docVector) * getVictorLength(queryVector));
-
-		return cosine_similarity;
-	}
-
-	private <T> double getVictorLength(Map<String, T> docVector) {
-		double squareSum = 0;
-		for (String key : docVector.keySet()) {
-			T number = docVector.get(key);
-			Double root = _transferNumber2Double(number);
-
-			squareSum += Math.pow(root, 2);
-		}
-		return Math.sqrt(squareSum);
-	}
-
-	private <T> double computeDiceSimilarity(Map<String, T> queryVector, Map<String, T> docVector) {
-		double diceSum = 0.0;
-		double intersectionSum = 0.0;
-		Set<String> dimentionSet = new HashSet<String>();
-
-		dimentionSet.addAll(queryVector.keySet());
-		dimentionSet.addAll(docVector.keySet());
-		for (String key : dimentionSet) {
-			Double qf = 0.0;
-			Double df = 0.0;
-			if (queryVector.containsKey(key)) {
-				qf = _transferNumber2Double(queryVector.get(key));
-			}
-			if (docVector.containsKey(key)) {
-				df = _transferNumber2Double(docVector.get(key));
-			}
-			diceSum += (qf + df);
-			intersectionSum += Math.min(qf, df);
-		}
-		return intersectionSum * 2 / diceSum;
-	}
-
-	private <T> double computeJaccardSimilarity(Map<String, T> queryVector, Map<String, T> docVector) {
-		double unionSum = 0.0;
-		double intersectionSum = 0.0;
-		Set<String> dimentionSet = new HashSet<String>();
-
-		dimentionSet.addAll(queryVector.keySet());
-		dimentionSet.addAll(docVector.keySet());
-		for (String key : dimentionSet) {
-			Double qf = 0.0;
-			Double df = 0.0;
-			if (queryVector.containsKey(key)) {
-				qf = _transferNumber2Double(queryVector.get(key));
-			}
-			if (docVector.containsKey(key)) {
-				df = _transferNumber2Double(docVector.get(key));
-			}
-			unionSum += Math.max(qf, df);
-			intersectionSum += Math.min(qf, df);
-		}
-		return intersectionSum * 2 / unionSum;
-	}
-
-	private <T> double computeBM25Similarity(Map<String, Integer> queryVector, Map<String, Integer> docVector,//
-			double aveageFileLength, Map<String, Double> idfMap) {
-		double result = 0.0;
-		double k1 = 1.2;
-		double b = 0.75;
-		int docsize = 0;
-		for (String key : docVector.keySet()) {
-			docsize += docVector.get(key);
-		}
-		for (String key : queryVector.keySet()) {
-			int tf = 0;
-			if (docVector.containsKey(key))
-				tf = docVector.get(key);
-
-			result += idfMap.get(key) * tf * (k1 + 1) / (tf + k1 * (1 - b + b * docsize / aveageFileLength));
-		}
-		return result;
-	}
-
-	private <T> double _transferNumber2Double(T number) {
-		double result = 0.0;
-		if (Double.class.isInstance(number))
-			result = (Double) number;
-		else if (Integer.class.isInstance(number))
-			result = new Integer((Integer) number).doubleValue();
-		else {
-			System.err.println(number.getClass() + "\t not processed as number converting.");
-		}
-		return result;
-	}
+	
 
 }

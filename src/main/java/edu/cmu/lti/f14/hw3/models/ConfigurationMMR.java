@@ -18,7 +18,7 @@ public class ConfigurationMMR {
 		this.stemMethod = stemMethod;
 	}
 
-	public ConfigurationMMR(CorpusDocument cd) {
+	public ConfigurationMMR(ScoredDocument cd) {
 		this.tokenizeMethod = cd.getTokenizeMethod();
 		this.allLowerCase = cd.getAllLowerCase();
 		this.filteredStopword = cd.getFilteredStopword();

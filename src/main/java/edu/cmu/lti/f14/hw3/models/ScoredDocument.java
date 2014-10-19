@@ -5,7 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-public class CorpusDocument {
+public class ScoredDocument {
 	Map<String, Integer> tfVector;
 	Map<String, Double> tfIdfVector;
 	String sentence;
@@ -17,7 +17,7 @@ public class CorpusDocument {
 	Boolean filteredStopword;
 	String stemMethod;
 
-	public CorpusDocument() {
+	public ScoredDocument() {
 		scores = new ArrayList<Double>();
 	}
 
@@ -98,14 +98,14 @@ public class CorpusDocument {
 	}
 
 
-	public static class ScoreComparator implements Comparator<CorpusDocument> {
+	public static class ScoreComparator implements Comparator<ScoredDocument> {
 		int usingScoreIndex;
 		public ScoreComparator(int usingScoreIndex) {
 			super();
 			this.usingScoreIndex = usingScoreIndex;
 		}
 		@Override
-		public int compare(CorpusDocument o1, CorpusDocument o2) {
+		public int compare(ScoredDocument o1, ScoredDocument o2) {
 			return o1.getScores().get(usingScoreIndex).compareTo(o2.getScores().get(usingScoreIndex));
 		}
 	}
