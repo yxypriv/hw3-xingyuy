@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,9 +25,11 @@ import org.apache.uima.resource.ResourceInitializationException;
 import org.apache.uima.resource.ResourceProcessException;
 import org.apache.uima.util.ProcessTrace;
 
+import edu.cmu.lti.f14.hw3.models.ConfigurationMMR;
 import edu.cmu.lti.f14.hw3.models.CorpusDocument;
-import edu.cmu.lti.f14.hw3.typesystems.Document;
 import edu.cmu.lti.f14.hw3.typesystems.Token;
+import edu.cmu.lti.f14.hw3.typesystems.task2.Task2Document;
+import edu.cmu.lti.f14.hw3.typesystems.task2.VectorResult;
 import edu.cmu.lti.f14.hw3.utils.Utils;
 
 public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
@@ -36,7 +39,7 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 	public static final String PARAM_OUTPUT_FILE = "OutputFile";
 	PrintWriter writer = null;
 
-	List<CorpusDocument> docList = new ArrayList<CorpusDocument>();
+	List<List<CorpusDocument>> configurationGroupedDocList = new ArrayList<List<CorpusDocument>>();
 
 	@Override
 	public void initialize() throws ResourceInitializationException {
@@ -73,25 +76,64 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 			throw new ResourceProcessException(e);
 		}
 
-		FSIterator<Annotation> it = jcas.getAnnotationIndex(Document.type).iterator();
-
-		if (it.hasNext()) {
-			Document doc = (Document) it.next();
-
-			FSList fsTokenList = doc.getTokenList();
-			ArrayList<Token> tokenList = Utils.fromFSListToCollection(fsTokenList, Token.class);
-			Map<String, Integer> vector = new HashMap<String, Integer>();
-			for (Token token : tokenList) {
-				vector.put(token.getText(), token.getFrequency());
+		FSIterator<Annotation> it = jcas.getAnnotationIndex(Task2Document.type).iterator();
+		List<List<CorpusDocument>> docGroupedDocList = new ArrayList<List<CorpusDocument>>();
+		Comparator<CorpusDocument> configurationOrderComparator = new Comparator<CorpusDocument>() {
+			@Override
+			public int compare(CorpusDocument o1, CorpusDocument o2) {
+				int result = o1.getTokenizeMethod().compareTo(o2.getTokenizeMethod());
+				if (0 == result)
+					result = o1.getAllLowerCase().compareTo(o2.getAllLowerCase());
+				if (0 == result)
+					result = o1.getFilteredStopword().compareTo(o2.getFilteredStopword());
+				if (0 == result)
+					result = o1.getStemMethod().compareTo(o2.getStemMethod());
+				return result;
 			}
-			CorpusDocument cdoc = new CorpusDocument();
-			cdoc.setQid(doc.getQueryID());
-			cdoc.setRel(doc.getRelevanceValue());
-			cdoc.setTfVector(vector);
-			cdoc.setSentence(doc.getText());
-			docList.add(cdoc);
+		};
+		if (it.hasNext()) {
+			Task2Document t2doc = (Task2Document) it.next();
+			FSList vectorList = t2doc.getVectorList();
+			ArrayList<VectorResult> vectorResult = Utils.fromFSListToCollection(vectorList, VectorResult.class);
+			List<CorpusDocument> sameDocList = new ArrayList<CorpusDocument>();
+
+			for (VectorResult doc : vectorResult) {
+				FSList fsTokenList = doc.getTokenList();
+				ArrayList<Token> tokenList = Utils.fromFSListToCollection(fsTokenList, Token.class);
+				Map<String, Integer> vector = new HashMap<String, Integer>();
+				for (Token token : tokenList) {
+					vector.put(token.getText(), token.getFrequency());
+				}
+				CorpusDocument cdoc = new CorpusDocument();
+				cdoc.setQid(t2doc.getQid());
+				cdoc.setRel(t2doc.getRel());
+				cdoc.setTfVector(vector);
+				cdoc.setSentence(t2doc.getText());
+				cdoc.setTokenizeMethod(doc.getTokenizeMethod());
+				cdoc.setAllLowerCase(doc.getAllLowerCase());
+				cdoc.setFilteredStopword(doc.getFilteredStopword());
+				cdoc.setStemMethod(doc.getStemMethod());
+				sameDocList.add(cdoc);
+			}
+			Collections.sort(sameDocList, configurationOrderComparator);
+
+			docGroupedDocList.add(sameDocList);
 		}
 
+		int configSize = -1;
+		if (docGroupedDocList.size() > 0) {
+			configSize = docGroupedDocList.get(0).size();
+		}
+		if (configurationGroupedDocList.size() == 0) {
+			for (int i = 0; i < configSize; i++) {
+				configurationGroupedDocList.add(new ArrayList<CorpusDocument>());
+			}
+		}
+		for (List<CorpusDocument> sameDocList : docGroupedDocList) {
+			for (int i = 0; i < sameDocList.size(); i++) {
+				configurationGroupedDocList.get(i).add(sameDocList.get(i));
+			}
+		}
 	}
 
 	/**
@@ -102,100 +144,125 @@ public class Task2RetrievalEvaluator extends CasConsumer_ImplBase {
 	public void collectionProcessComplete(ProcessTrace arg0) throws ResourceProcessException, IOException {
 
 		super.collectionProcessComplete(arg0);
-		Integer totalFileLength = 0;
-		Map<String, Integer> dfMap = new HashMap<String, Integer>();
-		for (CorpusDocument cd : docList) {
-			Map<String, Integer> vector = cd.getTfVector();
-			for (String key : vector.keySet()) {
-				if (!dfMap.containsKey(key))
-					dfMap.put(key, 1);
-				else
-					dfMap.put(key, dfMap.get(key) + 1);
-				totalFileLength += vector.get(key);
+		List<ConfigurationMMR> mmrList = new ArrayList<ConfigurationMMR>();
+		for (List<CorpusDocument> docList : configurationGroupedDocList) {
+			Integer totalFileLength = 0;
+			Map<String, Integer> dfMap = new HashMap<String, Integer>();
+			ConfigurationMMR cmmr = null;
+			// System.out.println(docList.size());
+			for (CorpusDocument cd : docList) {
+				if (null == cmmr) {
+					cmmr = new ConfigurationMMR(cd);
+					String outputString = String.format("[Configuration] tokenize: %s\tlowercase: %s\tstopwords: %s\tstemming: %s",//
+							cmmr.getTokenizeMethod(), cmmr.getAllLowerCase(), cmmr.getFilteredStopword(), cmmr.getStemMethod());
+					System.out.println(outputString);
+					writer.println(outputString);
+				}
+				Map<String, Integer> vector = cd.getTfVector();
+				for (String key : vector.keySet()) {
+					if (!dfMap.containsKey(key))
+						dfMap.put(key, 1);
+					else
+						dfMap.put(key, dfMap.get(key) + 1);
+					totalFileLength += vector.get(key);
+				}
 			}
-		}
-		double aveageFileLength = totalFileLength.doubleValue() / dfMap.size();
+			double aveageFileLength = totalFileLength.doubleValue() / dfMap.size();
 
-		Map<String, Double> idfMap = new HashMap<String, Double>();
-		for (String key : dfMap.keySet()) {
-			idfMap.put(key, Math.log(docList.size() / dfMap.get(key)));
-		}
-
-		for (CorpusDocument cd : docList) {
-			Map<String, Integer> vector = cd.getTfVector();
-			Map<String, Double> tfIdfVector = new HashMap<String, Double>();
-			int wordCount = 0;
-			for (String key : vector.keySet()) {
-				wordCount += vector.get(key);
-			}
-			for (String key : vector.keySet()) {
-				tfIdfVector.put(key, idfMap.get(key) * (0.5 + 0.5 * (vector.get(key) / wordCount)));
-			}
-			cd.setTfIdfVector(tfIdfVector);
-		}
-
-		HashMap<Integer, CorpusDocument> queryMap = new HashMap<Integer, CorpusDocument>();
-		HashMap<Integer, List<CorpusDocument>> documentsMap = new HashMap<Integer, List<CorpusDocument>>();
-
-		for (CorpusDocument cp : docList) {
-			int qid = cp.getQid();
-			int rel = cp.getRel();
-			if (rel == 99) {
-				queryMap.put(qid, cp);
-			} else {
-				if (!documentsMap.containsKey(qid))
-					documentsMap.put(qid, new ArrayList<CorpusDocument>());
-				documentsMap.get(qid).add(cp);
-			}
-		}
-
-		double[] totalMMr = new double[methods.length];
-		for (Integer qid : queryMap.keySet()) {
-			List<CorpusDocument> docField = documentsMap.get(qid);
-			CorpusDocument queryDoc = queryMap.get(qid);
-
-			for (CorpusDocument doc : docField) {
-				double naiveScore = computeCosineSimilarity(queryDoc.getTfVector(), doc.getTfVector());
-				double tfidfScore = computeCosineSimilarity(queryDoc.getTfIdfVector(), doc.getTfIdfVector());
-				double naiveDice = computeDiceSimilarity(queryDoc.getTfVector(), doc.getTfVector());
-				double naiveJaccard = computeJaccardSimilarity(queryDoc.getTfVector(), doc.getTfVector());
-				double naiveBm25 = computeBM25Similarity(queryDoc.getTfVector(), doc.getTfVector(), aveageFileLength, idfMap);
-				doc.getScores().add(naiveScore);
-				doc.getScores().add(tfidfScore);
-				doc.getScores().add(naiveDice);
-				doc.getScores().add(naiveJaccard);
-				doc.getScores().add(naiveBm25);
+			Map<String, Double> idfMap = new HashMap<String, Double>();
+			for (String key : dfMap.keySet()) {
+				idfMap.put(key, Math.log(docList.size() / dfMap.get(key)));
 			}
 
-			for (int i = 0; i < methods.length; i++) {
-				CorpusDocument.ScoreComparator indexScoreComparator = new CorpusDocument.ScoreComparator(i);
-				Collections.sort(docField, Collections.reverseOrder(indexScoreComparator));
-				int rank = -1;
-				CorpusDocument relativeDoc = null;
-				for (int j = 0; j < docField.size(); j++) {
-					if (docField.get(j).getRel() == 1) {
-						rank = j + 1;
-						relativeDoc = docField.get(j);
-						break;
-					}
+			for (CorpusDocument cd : docList) {
+				Map<String, Integer> vector = cd.getTfVector();
+				Map<String, Double> tfIdfVector = new HashMap<String, Double>();
+				int wordCount = 0;
+				for (String key : vector.keySet()) {
+					wordCount += vector.get(key);
+				}
+				for (String key : vector.keySet()) {
+					tfIdfVector.put(key, idfMap.get(key) * (0.5 + 0.5 * (vector.get(key) / wordCount)));
+				}
+				cd.setTfIdfVector(tfIdfVector);
+			}
+
+			HashMap<Integer, CorpusDocument> queryMap = new HashMap<Integer, CorpusDocument>();
+			HashMap<Integer, List<CorpusDocument>> documentsMap = new HashMap<Integer, List<CorpusDocument>>();
+
+			for (CorpusDocument cp : docList) {
+				int qid = cp.getQid();
+				int rel = cp.getRel();
+				if (rel == 99) {
+					queryMap.put(qid, cp);
+				} else {
+					if (!documentsMap.containsKey(qid))
+						documentsMap.put(qid, new ArrayList<CorpusDocument>());
+					documentsMap.get(qid).add(cp);
+				}
+			}
+
+			double[] totalMMr = new double[methods.length];
+			for (Integer qid : queryMap.keySet()) {
+				List<CorpusDocument> docField = documentsMap.get(qid);
+				CorpusDocument queryDoc = queryMap.get(qid);
+
+				for (CorpusDocument doc : docField) {
+					double naiveScore = computeCosineSimilarity(queryDoc.getTfVector(), doc.getTfVector());
+					double tfidfScore = computeCosineSimilarity(queryDoc.getTfIdfVector(), doc.getTfIdfVector());
+					double naiveDice = computeDiceSimilarity(queryDoc.getTfVector(), doc.getTfVector());
+					double naiveJaccard = computeJaccardSimilarity(queryDoc.getTfVector(), doc.getTfVector());
+					double naiveBm25 = computeBM25Similarity(queryDoc.getTfVector(), doc.getTfVector(), aveageFileLength, idfMap);
+					doc.getScores().add(naiveScore);
+					doc.getScores().add(tfidfScore);
+					doc.getScores().add(naiveDice);
+					doc.getScores().add(naiveJaccard);
+					doc.getScores().add(naiveBm25);
 				}
 
-				if (rank != -1)
-					totalMMr[i] += 1.0 / rank;
-				String outputString = String.format("method:%s\tcosine=%f\trank=%d\tqid=%d\trel=%d\t%s",//
-						methods[i], relativeDoc.getScores().get(i), rank, qid, 1, relativeDoc.getSentence());
+				for (int i = 0; i < methods.length; i++) {
+					CorpusDocument.ScoreComparator indexScoreComparator = new CorpusDocument.ScoreComparator(i);
+					Collections.sort(docField, Collections.reverseOrder(indexScoreComparator));
+					int rank = -1;
+					CorpusDocument relativeDoc = null;
+					for (int j = 0; j < docField.size(); j++) {
+						if (docField.get(j).getRel() == 1) {
+							rank = j + 1;
+							relativeDoc = docField.get(j);
+							break;
+						}
+					}
+
+					if (rank != -1)
+						totalMMr[i] += 1.0 / rank;
+					String outputString = String.format("method:%s\tcosine=%f\trank=%d\tqid=%d\trel=%d\t%s",//
+							methods[i], relativeDoc.getScores().get(i), rank, qid, 1, relativeDoc.getSentence());
+					// System.out.println(outputString);
+					writer.println(outputString);
+				}
+
+			}
+			for (int i = 0; i < methods.length; i++) {
+				double metric_mrr = totalMMr[i] / documentsMap.size();
+				String outputString = String.format("Method:%s\tMMR=%f", methods[i], metric_mrr);
 				System.out.println(outputString);
 				writer.println(outputString);
+				ConfigurationMMR ncmmr = new ConfigurationMMR(cmmr);
+				ncmmr.setMmr(metric_mrr);
+				ncmmr.setSimilarityMethod(methods[i]);
+				mmrList.add(ncmmr);
 			}
-
 		}
-		for (int i = 0; i < methods.length; i++) {
-			double metric_mrr = totalMMr[i] / documentsMap.size();
-			String outputString = String.format("Method:%s\tMMR=%f", methods[i], metric_mrr);
-			System.out.println(outputString);
+
+		Collections.sort(mmrList, Collections.reverseOrder(ConfigurationMMR.mmrComparator));
+		int topdisplay = 5;
+		for (ConfigurationMMR mmr : mmrList) {
+			String outputString = String.format("MMr: %f\t [Similarity Method] %s\t [Configuration] tokenize: %s\tlowercase: %s\tstopwords: %s\tstemming: %s",//
+					mmr.getMmr(), mmr.getSimilarityMethod(), mmr.getTokenizeMethod(), mmr.getAllLowerCase(), mmr.getFilteredStopword(), mmr.getStemMethod());
+			if(--topdisplay >= 0)
+				System.out.println(outputString);
 			writer.println(outputString);
 		}
-
 	}
 
 	@Override

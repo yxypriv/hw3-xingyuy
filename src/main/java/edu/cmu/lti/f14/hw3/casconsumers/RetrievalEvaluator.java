@@ -193,9 +193,11 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
 		dimentionSet.addAll(queryVector.keySet());
 		dimentionSet.addAll(docVector.keySet());
+		double queryLength = getVictorEuclidianLength(queryVector);
+		double docLength = getVictorEuclidianLength(docVector);
 		for (String key : dimentionSet) {
-			int qf = 0;
-			int df = 0;
+			double qf = 0;
+			double df = 0;
 			if (queryVector.containsKey(key)) {
 				qf = queryVector.get(key);
 			}
@@ -205,18 +207,26 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 			vectorSum += qf * df;
 		}
 
-		cosine_similarity = vectorSum / (getVictorLength(docVector) * getVictorLength(queryVector));
-
+		cosine_similarity = vectorSum / (queryLength * docLength);
+//		cosine_similarity = vectorSum;
 		return cosine_similarity;
 	}
 
 	
 	
-	private double getVictorLength(Map<String, Integer> vector) {
+	private double getVictorEuclidianLength(Map<String, Integer> vector) {
 		double squareSum = 0;
 		for (String key : vector.keySet()) {
 			squareSum += Math.pow(vector.get(key), 2);
 		}
 		return Math.sqrt(squareSum);
+	}
+	
+	private double getVectorLinearLength(Map<String, Integer> vector) {
+		double linearSum = 0.0;
+		for(String key : vector.keySet()) {
+			linearSum += vector.get(key);
+		}
+		return linearSum;
 	}
 }

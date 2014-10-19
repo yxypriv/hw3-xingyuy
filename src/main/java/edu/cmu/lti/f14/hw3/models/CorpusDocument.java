@@ -12,6 +12,10 @@ public class CorpusDocument {
 	int qid;
 	int rel;
 	List<Double> scores;
+	String tokenizeMethod;
+	Boolean allLowerCase;
+	Boolean filteredStopword;
+	String stemMethod;
 
 	public CorpusDocument() {
 		scores = new ArrayList<Double>();
@@ -56,40 +60,70 @@ public class CorpusDocument {
 	public void setTfIdfVector(Map<String, Double> tfIdfVector) {
 		this.tfIdfVector = tfIdfVector;
 	}
-	
+
 	public List<Double> getScores() {
 		return scores;
 	}
+	
+	public String getTokenizeMethod() {
+		return tokenizeMethod;
+	}
+
+	public void setTokenizeMethod(String tokenizeMethod) {
+		this.tokenizeMethod = tokenizeMethod;
+	}
+
+	public Boolean getAllLowerCase() {
+		return allLowerCase;
+	}
+
+	public void setAllLowerCase(Boolean allLowerCase) {
+		this.allLowerCase = allLowerCase;
+	}
+
+	public Boolean getFilteredStopword() {
+		return filteredStopword;
+	}
+
+	public void setFilteredStopword(Boolean filteredStopword) {
+		this.filteredStopword = filteredStopword;
+	}
+
+	public String getStemMethod() {
+		return stemMethod;
+	}
+
+	public void setStemMethod(String stemMethod) {
+		this.stemMethod = stemMethod;
+	}
+
 
 	public static class ScoreComparator implements Comparator<CorpusDocument> {
-
 		int usingScoreIndex;
-
 		public ScoreComparator(int usingScoreIndex) {
 			super();
 			this.usingScoreIndex = usingScoreIndex;
 		}
-
 		@Override
 		public int compare(CorpusDocument o1, CorpusDocument o2) {
 			return o1.getScores().get(usingScoreIndex).compareTo(o2.getScores().get(usingScoreIndex));
 		}
-
 	}
+
 	@Override
 	public String toString() {
 		StringBuilder result = new StringBuilder();
-		result.append("{"); 
+		result.append("{");
 		result.append("qid: ").append(qid).append(", ");
 		result.append("rel: ").append(rel).append(", ");
 		result.append("score: ").append(scores).append(", ");
 		result.append("vectors: ").append("{");
-		for(String key : tfVector.keySet()) {
+		for (String key : tfVector.keySet()) {
 			result.append(key).append(": ").append("[");
 			result.append(tfVector.get(key)).append(", ");
 			result.append(tfIdfVector.get(key)).append("], ");
 		}
-		result.delete(result.length()-2, result.length());
+		result.delete(result.length() - 2, result.length());
 		result.append("}, ");
 		result.append("senence: ").append("\"").append(sentence.replaceAll("\"", "\\\"")).append("\"");
 		result.append("}");
