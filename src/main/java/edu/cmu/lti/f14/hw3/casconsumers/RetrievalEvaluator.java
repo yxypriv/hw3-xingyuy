@@ -161,6 +161,9 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
 					relativeDoc = scoredDocField.get(i);
 					break;
 				}
+				System.out.println(String.format("~~ cosine=%f\trank=%d\tqid=%d\trel=%d\t%s", //
+						scoredDocField.get(i).getV3(), i+1, qid, scoredDocField.get(i).getV2(),  //
+						scoredDocField.get(i).getV1()));
 			}
 			if (rank != -1)
 				totalMMr += 1.0 / rank;
